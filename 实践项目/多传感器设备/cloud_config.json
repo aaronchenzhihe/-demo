@@ -1,0 +1,15 @@
+{
+  "QTH_PRODUCT_KEY": "p11yFS",
+  "QTH_PRODUCT_SECRET": "WjJ6Y3pEN0ZkWHlZ",
+  "QTH_SERVER": "mqtt://iot-south.acceleronix.io:1883",
+  "USE_DEFAULT_QTH_SERVER": true,
+  "TSL_TEMP_FUNC_ID": 12,
+  "TSL_HUMI_FUNC_ID": 15,
+  "TSL_LIGHT_FUNC_ID": 16,
+  "TSL_LON_FUNC_ID": 17,
+  "TSL_LAT_FUNC_ID": 18,
+  "TSL_MODE": 1,
+  "UPLOAD_INTERVAL_SEC": 5,
+  "QTH_CONNECT_WAIT_SEC": 30,
+  "NET_RETRY": 8
+}
