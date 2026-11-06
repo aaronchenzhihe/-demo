@@ -1,0 +1,1 @@
+"""Ambient light LED dimming package."""

@@ -355,32 +355,3 @@ class Camera:
             pass
 
 
-# ===========================================================================
-# 独立自测：预览 10 秒 → 拍照保存到 /usr/
-# ===========================================================================
-def _demo():
-    print("[camera_driver] init LCD + camera ...")
-    cam = Camera(model=Camera.GC032A, cam_w=640, cam_h=480,
-                 lcd_w=240, lcd_h=240, preview_level=2)
-    try:
-        print("start preview:", cam.start_preview())
-        utime.sleep(10)
-        cam.stop_preview()
-
-        # 拍照后自动在屏上预览照片（capture 分辨率取屏幕尺寸以便全屏显示）
-        name = cam.take_photo("test_photo", width=240, height=240, show_after=True)
-        if name:
-            print("[OK] 拍照成功，已保存：", name)
-            utime.sleep(5)  # 保持照片显示 5 秒
-        else:
-            print("[FAIL] 拍照失败")
-
-        print("jpeg in /usr:",
-              [f for f in uos.listdir("/usr") if f.endswith(".jpeg")])
-    finally:
-        cam.close()
-        print("[camera_driver] done")
-
-
-if __name__ == "__main__":
-    _demo()

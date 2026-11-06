@@ -185,6 +185,7 @@ class Application(object):
             self.__protocol.mcp_tools_list()
         elif method =="tools/call":
             handle =data_dict['payload']['params']['name']
+            tool_args = data_dict['payload']["params"].get("arguments", {})
             result_text = None
 
             if handle == "self.setvolume_down()":     
@@ -206,7 +207,7 @@ class Application(object):
                 self.light_on()
                 print("已开灯")
             elif handle in CameraTools.NAMES:
-                result_text = self.camera_tools.handle(handle)
+                result_text = self.camera_tools.handle(handle, tool_args)
                 print("摄像头工具:", handle, "->", result_text)
             self.__protocol.mcp_tools_call(tool_name=handle, req_id=id, args=result_text)
         # raise NotImplementedError("handle_mcp_message not implemented")

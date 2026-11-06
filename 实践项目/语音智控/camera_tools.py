@@ -16,7 +16,7 @@
 """
 
 from usr.camera_driver import Camera
-from usr.logging import getLogger
+from usr.logging import getLogger 
 
 logger = getLogger(__name__)
 
