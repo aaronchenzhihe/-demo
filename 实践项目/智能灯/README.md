@@ -53,15 +53,28 @@ flowchart TD
 
 ### 模块职责
 
-| 模块 | 主要方法 | 职责 |
+| 文件 | 主要对象 | 职责 |
 | --- | --- | --- |
-| `UltrasonicSensor` | `read_cm()` | 触发超声波，读取回波脉宽，换算距离并处理超时 |
-| `DistanceGate` | `update()` | 判断是否允许亮灯，管理连续测距失败次数 |
-| `LightController` | `target_from_mv()` | 把 ADC 电压映射为 0～100% 目标亮度 |
-| `LightController` | `update()`、`reset()` | 滤波、限速，以及熄灭时重置状态 |
-| `run()` | 主循环 | 协调采样、门控、调光、PWM 输出和状态日志 |
+| [config.py](config.py) | 配置常量 | 集中管理电压校准、灵敏度、采样周期和距离门限 |
+| [ultrasonic.py](ultrasonic.py) | `UltrasonicSensor` | 触发超声波，读取回波脉宽，换算距离并处理超时 |
+| [distance_gate.py](distance_gate.py) | `DistanceGate` | 判断是否允许亮灯，管理连续测距失败次数 |
+| [light_controller.py](light_controller.py) | `LightController` | 电压映射、亮度滤波、限速，以及熄灭时重置状态 |
+| [_main.py](_main.py) | `run()` | 初始化硬件，协调采样、门控、调光、PWM 输出和状态日志 |
 
-上述模块均位于 [_main.py](_main.py)，不是分别运行的多个程序。超声波不会直接控制 PWM，最终输出由 `run()` 统一处理。
+采用扁平多文件结构，由主入口导入并组合各模块，不是分别启动多个程序。传感器模块不直接控制 PWM，最终输出仍由 `run()` 统一处理。
+
+模块依赖方向为：主入口依赖配置、测距、门控和调光模块；距离门控读取配置；测距与亮度算法互不依赖。亮度算法不依赖硬件接口，便于独立理解和复用。
+
+模块间使用 QuecPython 的 `usr` 导入路径，例如：
+
+```python
+from usr.config import SENSITIVITY
+from usr.distance_gate import DistanceGate
+from usr.light_controller import LightController
+from usr.ultrasonic import UltrasonicSensor
+```
+
+工作区中的文件保持平铺，不额外创建 `usr` 子目录；上传到设备 `/usr/` 后，以上导入路径即可对应到各模块。
 
 ### 一轮控制流程
 
@@ -142,7 +155,7 @@ pwm.open(PWM.ABOVE_MS, high_time, 20)
 
 ## 参数配置
 
-参数集中在 [_main.py](_main.py) 开头：
+参数集中在 [config.py](config.py)。修改参数后，需要重新上传配置并重启应用，使入口和门控模块重新加载配置：
 
 | 参数 | 默认值 | 含义 |
 | --- | --- | --- |
@@ -163,18 +176,22 @@ pwm.open(PWM.ABOVE_MS, high_time, 20)
 
 ```text
 智能灯/
-├── _main.py          # 智能灯主程序，已集成超声波、光敏和 PWM
+├── _main.py          # 主入口、硬件初始化和控制循环
+├── config.py         # 集中配置
+├── ultrasonic.py     # 超声波测距驱动
+├── distance_gate.py  # 距离门控与失败计数
+├── light_controller.py # 光敏亮度映射、滤波与限速
 ├── __init__.py       # 包入口
 ├── sr04-gpio.py      # 原始独立超声波测距参考脚本
 └── README.md         # 项目说明
 ```
 
-[sr04-gpio.py](sr04-gpio.py) 保留了原始独立测距实现。主程序不导入该脚本，也不需要它才能运行；不要与主程序同时执行，以免两个程序操作同一组超声波引脚。主程序已改用官方 `Pin.write()` / `Pin.read()` 接口，并使用实际微秒计时，而不是用循环次数估计超时。
+[sr04-gpio.py](sr04-gpio.py) 保留了原始独立测距实现。主程序不导入该脚本，也不需要它才能运行；不要与主程序同时执行，以免两个程序操作同一组超声波引脚。[ultrasonic.py](ultrasonic.py) 使用官方 `Pin.write()` / `Pin.read()` 接口和实际微秒计时，而不是用循环次数估计超时。
 
 ## 部署运行
 
 1. 准备支持所用 ADC、GPIO、PWM 接口的 QuecPython 模组及匹配固件，完成接线和电压检查。
-2. 把 [_main.py](_main.py) 与 [__init__.py](__init__.py) 上传到设备的 `/usr/` 目录。
+2. 将 [_main.py](_main.py)、[config.py](config.py)、[ultrasonic.py](ultrasonic.py)、[distance_gate.py](distance_gate.py)、[light_controller.py](light_controller.py) 和 [__init__.py](__init__.py) 一起上传到设备的 `/usr/` 目录，保持同级。不能只上传入口文件；参考测距脚本不需要上传。
 3. 停止其他占用 PWM2、GPIO13、GPIO12 的程序，再在设备 REPL 中运行：
 
 ```python
